@@ -5,13 +5,13 @@ buildscript {
         }
     }
     dependencies {
-        classpath "com.gradle.enterprise:com.gradle.enterprise.gradle.plugin:3.16"
-        classpath "com.gradle:common-custom-user-data-gradle-plugin:1.12.1"
-        classpath "org.gradle.toolchains:foojay-resolver:0.7.0"
+        classpath "com.gradle.enterprise:com.gradle.enterprise.gradle.plugin:3.19.2"
+        classpath "com.gradle:common-custom-user-data-gradle-plugin:2.4.0"
+        classpath "org.gradle.toolchains:foojay-resolver:0.8.0"
     }
 }
 
-apply plugin: 'com.gradle.enterprise'
+apply plugin: 'com.gradle.develocity'
 apply plugin: "com.gradle.common-custom-user-data-gradle-plugin"
 apply plugin: "org.gradle.toolchains.foojay-resolver-convention"
 
@@ -23,12 +23,10 @@ include "testcontainers"
 project(':testcontainers').projectDir = "$rootDir/core" as File
 
 file('modules').eachDir { dir ->
-    include dir.name
-    project(":${dir.name}").projectDir = dir
+    include "testcontainers-${dir.name}"
+    project(":testcontainers-${dir.name}").projectDir = dir
 }
 
-include ':docs:examples:junit4:generic'
-include ':docs:examples:junit4:redis'
 include ':docs:examples:junit5:redis'
 include ':docs:examples:spock:redis'
 
@@ -40,24 +38,20 @@ buildCache {
     local {
         enabled = !isCI
     }
-    remote(HttpBuildCache) {
-        push = isCI && !System.getenv("READ_ONLY_REMOTE_GRADLE_CACHE") && System.getenv("GRADLE_ENTERPRISE_CACHE_PASSWORD")
+    remote(develocity.buildCache) {
+        push = isCI && !System.getenv("READ_ONLY_REMOTE_GRADLE_CACHE") && System.getenv("DEVELOCITY_ACCESS_KEY")
         enabled = true
-        url = 'https://ge.testcontainers.org/cache/'
-        credentials {
-            username = 'ci'
-            password = System.getenv("GRADLE_ENTERPRISE_CACHE_PASSWORD")
-        }
     }
 }
 
-gradleEnterprise {
+develocity {
     buildScan {
         server = "https://ge.testcontainers.org/"
-        publishAlways()
-        publishIfAuthenticated()
+        publishing.onlyIf {
+            it.authenticated
+        }
         uploadInBackground = !isCI
-        captureTaskInputFiles = true
+        capture.fileFingerprints = true
     }
 
 }

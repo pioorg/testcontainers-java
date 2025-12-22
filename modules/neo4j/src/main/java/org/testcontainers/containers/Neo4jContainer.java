@@ -30,7 +30,10 @@ import java.util.stream.Stream;
  *     <li>HTTP: 7474</li>
  *     <li>HTTPS: 7473</li>
  * </ul>
+ *
+ * @deprecated use {@link org.testcontainers.neo4j.Neo4jContainer} instead.
  */
+@Deprecated
 public class Neo4jContainer<S extends Neo4jContainer<S>> extends GenericContainer<S> {
 
     /**
@@ -317,29 +320,18 @@ public class Neo4jContainer<S extends Neo4jContainer<S>> extends GenericContaine
     }
 
     /**
-     * Registers one or more {@link Neo4jLabsPlugin} for download and server startup.
-
-     * @param neo4jLabsPlugins The Neo4j plugins that should get started with the server.
+     * Registers one or more Neo4j plugins for server startup.
+     * The plugins are listed here
+     * <ul>
+     *     <li><a href="https://neo4j.com/docs/operations-manual/5/configuration/plugins/">Neo4j 5</a></li>
+     *     <li><a href="https://neo4j.com/docs/operations-manual/4.4/docker/operations/#docker-neo4jlabs-plugins">Neo4j 4.4</a></li>
+     * </ul>
+     *
+     * @param plugins The Neo4j plugins that should get started with the server.
      * @return This container.
      */
-    public S withLabsPlugins(Neo4jLabsPlugin... neo4jLabsPlugins) {
-        List<String> pluginNames = Arrays
-            .stream(neo4jLabsPlugins)
-            .map(plugin -> plugin.pluginName)
-            .collect(Collectors.toList());
-
-        this.labsPlugins.addAll(pluginNames);
-        return self();
-    }
-
-    /**
-     * Registers one or more {@link Neo4jLabsPlugin} for download and server startup.
-
-     * @param neo4jLabsPlugins The Neo4j plugins that should get started with the server.
-     * @return This container.
-     */
-    public S withLabsPlugins(String... neo4jLabsPlugins) {
-        this.labsPlugins.addAll(Arrays.asList(neo4jLabsPlugins));
+    public S withPlugins(String... plugins) {
+        this.labsPlugins.addAll(Arrays.asList(plugins));
         return self();
     }
 

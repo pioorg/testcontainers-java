@@ -16,7 +16,6 @@ import org.junit.platform.commons.support.AnnotationSupport;
 import org.junit.platform.commons.support.HierarchyTraversalMode;
 import org.junit.platform.commons.support.ModifierSupport;
 import org.junit.platform.commons.support.ReflectionSupport;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.lifecycle.Startable;
 import org.testcontainers.lifecycle.Startables;
 import org.testcontainers.lifecycle.TestDescription;
@@ -41,6 +40,8 @@ public class TestcontainersExtension
     private static final String SHARED_LIFECYCLE_AWARE_CONTAINERS = "sharedLifecycleAwareContainers";
 
     private static final String LOCAL_LIFECYCLE_AWARE_CONTAINERS = "localLifecycleAwareContainers";
+
+    private final DockerAvailableDetector dockerDetector = new DockerAvailableDetector();
 
     @Override
     public void beforeAll(ExtensionContext context) {
@@ -192,12 +193,7 @@ public class TestcontainersExtension
     }
 
     boolean isDockerAvailable() {
-        try {
-            DockerClientFactory.instance().client();
-            return true;
-        } catch (Throwable ex) {
-            return false;
-        }
+        return this.dockerDetector.isDockerAvailable();
     }
 
     private Set<Object> collectParentTestInstances(final ExtensionContext context) {
@@ -264,7 +260,7 @@ public class TestcontainersExtension
      * thereby letting the JUnit automatically stop containers once the current
      * {@link ExtensionContext} is closed.
      */
-    private static class StoreAdapter implements CloseableResource {
+    private static class StoreAdapter implements CloseableResource, AutoCloseable {
 
         @Getter
         private String key;

@@ -1,7 +1,7 @@
 package org.testcontainers.jdbc;
 
 import com.google.common.base.Throwables;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.containers.JdbcDatabaseContainer;
 import org.testcontainers.utility.DockerImageName;
 
@@ -12,10 +12,10 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.fail;
 
-public class MissingJdbcDriverTest {
+class MissingJdbcDriverTest {
 
     @Test
-    public void shouldFailFastIfNoDriverFound() {
+    void shouldFailFastIfNoDriverFound() {
         final MissingDriverContainer container = new MissingDriverContainer();
 
         try {
@@ -43,7 +43,7 @@ public class MissingJdbcDriverTest {
         private final AtomicInteger connectionAttempts = new AtomicInteger();
 
         MissingDriverContainer() {
-            super(DockerImageName.parse("mysql:5.7.34"));
+            super(DockerImageName.parse("mysql:8.0.36"));
             withEnv("MYSQL_ROOT_PASSWORD", "test");
             withExposedPorts(3306);
         }

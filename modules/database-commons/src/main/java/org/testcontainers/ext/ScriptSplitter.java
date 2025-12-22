@@ -36,7 +36,7 @@ class ScriptSplitter {
                     //skip
                     break;
                 case WHITESPACE:
-                    if (!sb.toString().endsWith(" ")) {
+                    if (sb.length() == 0 || sb.charAt(sb.length() - 1) != ' ') {
                         sb.append(' ');
                     }
                     break;
@@ -101,8 +101,8 @@ class ScriptSplitter {
                     if (";".equals(scanner.getCurrentMatch())) {
                         if (recursive) {
                             sb.append(temporary);
-                            appendMatch();
                         }
+                        appendMatch();
                         return true;
                     }
                     sb.append(temporary);

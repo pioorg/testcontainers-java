@@ -1,6 +1,6 @@
 package org.testcontainers.containers;
 
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -9,7 +9,10 @@ import org.testcontainers.utility.DockerImageName;
  * Supported images: {@code gcr.io/google.com/cloudsdktool/google-cloud-cli}, {@code gcr.io/google.com/cloudsdktool/cloud-sdk}
  * <p>
  * Default port is 9000.
+ *
+ * @deprecated use {@link org.testcontainers.gcloud.BigtableEmulatorContainer} instead.
  */
+@Deprecated
 public class BigtableEmulatorContainer extends GenericContainer<BigtableEmulatorContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(
@@ -33,7 +36,7 @@ public class BigtableEmulatorContainer extends GenericContainer<BigtableEmulator
         dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME, CLOUD_SDK_IMAGE_NAME);
 
         withExposedPorts(PORT);
-        setWaitStrategy(new LogMessageWaitStrategy().withRegEx("(?s).*running.*$"));
+        setWaitStrategy(Wait.forLogMessage(".*running.*$", 1));
         withCommand("/bin/sh", "-c", CMD);
     }
 

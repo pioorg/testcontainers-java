@@ -10,7 +10,9 @@ Note that it's based on the [official Docker image](https://www.elastic.co/guide
 You can start an elasticsearch container instance from any Java application by using:
 
 <!--codeinclude-->
-[HttpClient](../../modules/elasticsearch/src/test/java/org/testcontainers/elasticsearch/ElasticsearchContainerTest.java) inside_block:httpClientContainer
+[HttpClient](../../modules/elasticsearch/src/test/java/org/testcontainers/elasticsearch/ElasticsearchContainerTest.java) inside_block:httpClientContainer7
+[HttpClient with Elasticsearch 8](../../modules/elasticsearch/src/test/java/org/testcontainers/elasticsearch/ElasticsearchContainerTest.java) inside_block:httpClientContainer8
+[HttpClient with Elasticsearch 8 and SSL disabled](../../modules/elasticsearch/src/test/java/org/testcontainers/elasticsearch/ElasticsearchContainerTest.java) inside_block:httpClientContainerNoSSL8
 [TransportClient](../../modules/elasticsearch/src/test/java/org/testcontainers/elasticsearch/ElasticsearchContainerTest.java) inside_block:transportClientContainer
 <!--/codeinclude-->
 
@@ -34,14 +36,14 @@ Add the following dependency to your `pom.xml`/`build.gradle` file:
 
 === "Gradle"
     ```groovy
-    testImplementation "org.testcontainers:elasticsearch:{{latest_version}}"
+    testImplementation "org.testcontainers:testcontainers-elasticsearch:{{latest_version}}"
     ```
 
 === "Maven"
     ```xml
     <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>elasticsearch</artifactId>
+        <artifactId>testcontainers-elasticsearch</artifactId>
         <version>{{latest_version}}</version>
         <scope>test</scope>
     </dependency>

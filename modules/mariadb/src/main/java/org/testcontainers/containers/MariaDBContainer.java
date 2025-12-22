@@ -12,7 +12,10 @@ import java.util.Set;
  * Supported image: {@code mariadb}
  * <p>
  * Exposed ports: 3306
+ *
+ * @deprecated use {@link org.testcontainers.mariadb.MariaDBContainer} instead.
  */
+@Deprecated
 public class MariaDBContainer<SELF extends MariaDBContainer<SELF>> extends JdbcDatabaseContainer<SELF> {
 
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse("mariadb");
@@ -41,14 +44,6 @@ public class MariaDBContainer<SELF extends MariaDBContainer<SELF>> extends JdbcD
 
     private static final String MY_CNF_CONFIG_OVERRIDE_PARAM_NAME = "TC_MY_CNF";
 
-    /**
-     * @deprecated use {@link #MariaDBContainer(DockerImageName)} instead
-     */
-    @Deprecated
-    public MariaDBContainer() {
-        this(DEFAULT_IMAGE_NAME.withTag(DEFAULT_TAG));
-    }
-
     public MariaDBContainer(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
     }
@@ -75,7 +70,10 @@ public class MariaDBContainer<SELF extends MariaDBContainer<SELF>> extends JdbcD
         );
 
         addEnv("MYSQL_DATABASE", databaseName);
-        addEnv("MYSQL_USER", username);
+
+        if (!MARIADB_ROOT_USER.equalsIgnoreCase(this.username)) {
+            addEnv("MYSQL_USER", username);
+        }
         if (password != null && !password.isEmpty()) {
             addEnv("MYSQL_PASSWORD", password);
             addEnv("MYSQL_ROOT_PASSWORD", password);

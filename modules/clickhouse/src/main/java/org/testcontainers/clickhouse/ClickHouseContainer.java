@@ -1,7 +1,7 @@
 package org.testcontainers.clickhouse;
 
 import org.testcontainers.containers.JdbcDatabaseContainer;
-import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 import java.time.Duration;
@@ -21,25 +21,31 @@ import java.util.Set;
  */
 public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContainer> {
 
-    private static final String NAME = "clickhouse";
+    static final String CLICKHOUSE_CLICKHOUSE_SERVER = "clickhouse/clickhouse-server";
 
-    private static final DockerImageName CLICKHOUSE_IMAGE_NAME = DockerImageName.parse("clickhouse/clickhouse-server");
+    private static final DockerImageName CLICKHOUSE_IMAGE_NAME = DockerImageName.parse(CLICKHOUSE_CLICKHOUSE_SERVER);
 
-    private static final Integer HTTP_PORT = 8123;
+    static final Integer HTTP_PORT = 8123;
 
-    private static final Integer NATIVE_PORT = 9000;
+    static final Integer NATIVE_PORT = 9000;
 
-    private static final String DRIVER_CLASS_NAME = "com.clickhouse.jdbc.ClickHouseDriver";
+    private static final String LEGACY_V1_DRIVER_CLASS_NAME = "com.clickhouse.jdbc.ClickHouseDriver";
 
-    private static final String JDBC_URL_PREFIX = "jdbc:" + NAME + "://";
+    private static final String DRIVER_CLASS_NAME = "com.clickhouse.jdbc.Driver";
+
+    private static final String JDBC_URL_PREFIX = "jdbc:clickhouse://";
 
     private static final String TEST_QUERY = "SELECT 1";
 
+    static final String DEFAULT_USER = "test";
+
+    static final String DEFAULT_PASSWORD = "test";
+
     private String databaseName = "default";
 
-    private String username = "default";
+    private String username = DEFAULT_USER;
 
-    private String password = "";
+    private String password = DEFAULT_PASSWORD;
 
     public ClickHouseContainer(String dockerImageName) {
         this(DockerImageName.parse(dockerImageName));
@@ -50,11 +56,14 @@ public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContain
         dockerImageName.assertCompatibleWith(CLICKHOUSE_IMAGE_NAME);
 
         addExposedPorts(HTTP_PORT, NATIVE_PORT);
-        this.waitStrategy =
-            new HttpWaitStrategy()
+        waitingFor(
+            Wait
+                .forHttp("/")
+                .forPort(HTTP_PORT)
                 .forStatusCode(200)
                 .forResponsePredicate("Ok."::equals)
-                .withStartupTimeout(Duration.ofMinutes(1));
+                .withStartupTimeout(Duration.ofMinutes(1))
+        );
     }
 
     @Override
@@ -71,7 +80,12 @@ public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContain
 
     @Override
     public String getDriverClassName() {
-        return DRIVER_CLASS_NAME;
+        try {
+            Class.forName(DRIVER_CLASS_NAME);
+            return DRIVER_CLASS_NAME;
+        } catch (ClassNotFoundException e) {
+            return LEGACY_V1_DRIVER_CLASS_NAME;
+        }
     }
 
     @Override
@@ -87,6 +101,10 @@ public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContain
         );
     }
 
+    public String getHttpUrl() {
+        return "http://" + getHost() + ":" + getMappedPort(HTTP_PORT);
+    }
+
     @Override
     public String getUsername() {
         return username;
@@ -95,6 +113,11 @@ public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContain
     @Override
     public String getPassword() {
         return password;
+    }
+
+    @Override
+    public String getDatabaseName() {
+        return databaseName;
     }
 
     @Override
@@ -118,5 +141,10 @@ public class ClickHouseContainer extends JdbcDatabaseContainer<ClickHouseContain
     public ClickHouseContainer withDatabaseName(String databaseName) {
         this.databaseName = databaseName;
         return this;
+    }
+
+    @Override
+    protected void waitUntilContainerStarted() {
+        getWaitStrategy().waitUntilReady(this);
     }
 }

@@ -16,13 +16,14 @@ import org.elasticsearch.client.transport.TransportClient;
 import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.transport.TransportAddress;
 import org.elasticsearch.transport.client.PreBuiltTransportClient;
-import org.junit.After;
-import org.junit.Test;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
 import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.BindMode;
 import org.testcontainers.containers.wait.strategy.HttpWaitStrategy;
 import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.images.RemoteDockerImage;
+import org.testcontainers.images.builder.Transferable;
 import org.testcontainers.utility.DockerImageName;
 import org.testcontainers.utility.MountableFile;
 
@@ -33,7 +34,7 @@ import javax.net.ssl.SSLHandshakeException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.catchThrowable;
 
-public class ElasticsearchContainerTest {
+class ElasticsearchContainerTest {
 
     /**
      * Elasticsearch version which should be used for the Tests
@@ -58,7 +59,7 @@ public class ElasticsearchContainerTest {
 
     private RestClient anonymousClient = null;
 
-    @After
+    @AfterEach
     public void stopRestClient() throws IOException {
         if (client != null) {
             client.close();
@@ -73,29 +74,7 @@ public class ElasticsearchContainerTest {
     @SuppressWarnings("deprecation") // Using deprecated constructor for verification of backwards compatibility
     @Test
     @Deprecated // We will remove this test in the future
-    public void elasticsearchDeprecatedCtorTest() throws IOException {
-        // Create the elasticsearch container.
-        try (
-            ElasticsearchContainer container = new ElasticsearchContainer().withEnv("foo", "bar") // dummy env for compiler checking correct generics usage
-        ) {
-            // Start the container. This step might take some time...
-            container.start();
-
-            // Do whatever you want with the rest client ...
-            Response response = getClient(container).performRequest(new Request("GET", "/"));
-            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-            assertThat(EntityUtils.toString(response.getEntity())).contains(ELASTICSEARCH_VERSION);
-
-            // The default image is running with the features under Elastic License
-            response = getClient(container).performRequest(new Request("GET", "/_xpack/"));
-            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
-            // For now we test that we have the monitoring feature available
-            assertThat(EntityUtils.toString(response.getEntity())).contains("monitoring");
-        }
-    }
-
-    @Test
-    public void elasticsearchDefaultTest() throws IOException {
+    void elasticsearchDeprecatedCtorTest() throws IOException {
         // Create the elasticsearch container.
         try (
             ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE).withEnv("foo", "bar") // dummy env for compiler checking correct generics usage
@@ -117,7 +96,29 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void elasticsearchSecuredTest() throws IOException {
+    void elasticsearchDefaultTest() throws IOException {
+        // Create the elasticsearch container.
+        try (
+            ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE).withEnv("foo", "bar") // dummy env for compiler checking correct generics usage
+        ) {
+            // Start the container. This step might take some time...
+            container.start();
+
+            // Do whatever you want with the rest client ...
+            Response response = getClient(container).performRequest(new Request("GET", "/"));
+            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
+            assertThat(EntityUtils.toString(response.getEntity())).contains(ELASTICSEARCH_VERSION);
+
+            // The default image is running with the features under Elastic License
+            response = getClient(container).performRequest(new Request("GET", "/_xpack/"));
+            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
+            // For now we test that we have the monitoring feature available
+            assertThat(EntityUtils.toString(response.getEntity())).contains("monitoring");
+        }
+    }
+
+    @Test
+    void elasticsearchSecuredTest() throws IOException {
         try (
             ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)
                 .withPassword(ELASTICSEARCH_PASSWORD)
@@ -137,7 +138,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void elasticsearchVersion() throws IOException {
+    void elasticsearchVersion() throws IOException {
         try (ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)) {
             container.start();
             Response response = getClient(container).performRequest(new Request("GET", "/"));
@@ -148,7 +149,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void elasticsearchVersion83() throws IOException {
+    void elasticsearchVersion83() throws IOException {
         try (
             ElasticsearchContainer container = new ElasticsearchContainer(
                 "docker.elastic.co/elasticsearch/elasticsearch:8.3.0"
@@ -162,7 +163,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void elasticsearchOssImage() throws IOException {
+    void elasticsearchOssImage() throws IOException {
         try (
             // ossContainer {
             ElasticsearchContainer container = new ElasticsearchContainer(
@@ -181,8 +182,8 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void restClientClusterHealth() throws IOException {
-        // httpClientContainer {
+    void restClientClusterHealth() throws IOException {
+        // httpClientContainer7 {
         // Create the elasticsearch container.
         try (ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)) {
             // Start the container. This step might take some time...
@@ -207,13 +208,92 @@ public class ElasticsearchContainerTest {
             // }}
             assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
             assertThat(EntityUtils.toString(response.getEntity())).contains("cluster_name");
-            // httpClientContainer {{
+            // httpClientContainer7 {{
         }
         // }
     }
 
     @Test
-    public void restClientSecuredClusterHealth() throws IOException {
+    void restClientClusterHealthElasticsearch8() throws IOException {
+        // httpClientContainer8 {
+        // Create the elasticsearch container.
+        try (
+            ElasticsearchContainer container = new ElasticsearchContainer(
+                "docker.elastic.co/elasticsearch/elasticsearch:8.1.2"
+            )
+        ) {
+            // Start the container. This step might take some time...
+            container.start();
+
+            // Do whatever you want with the rest client ...
+            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(
+                AuthScope.ANY,
+                new UsernamePasswordCredentials(ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD)
+            );
+
+            client =
+                RestClient
+                    // use HTTPS for Elasticsearch 8
+                    .builder(HttpHost.create("https://" + container.getHttpHostAddress()))
+                    .setHttpClientConfigCallback(httpClientBuilder -> {
+                        httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                        // SSL is activated by default in Elasticsearch 8
+                        httpClientBuilder.setSSLContext(container.createSslContextFromCa());
+                        return httpClientBuilder;
+                    })
+                    .build();
+
+            Response response = client.performRequest(new Request("GET", "/_cluster/health"));
+            // }}
+            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
+            assertThat(EntityUtils.toString(response.getEntity())).contains("cluster_name");
+            // httpClientContainer8 {{
+        }
+        // }
+    }
+
+    @Test
+    void restClientClusterHealthElasticsearch8WithoutSSL() throws IOException {
+        // httpClientContainerNoSSL8 {
+        // Create the elasticsearch container.
+        try (
+            ElasticsearchContainer container = new ElasticsearchContainer(
+                "docker.elastic.co/elasticsearch/elasticsearch:8.1.2"
+            )
+                // disable SSL
+                .withEnv("xpack.security.transport.ssl.enabled", "false")
+                .withEnv("xpack.security.http.ssl.enabled", "false")
+        ) {
+            // Start the container. This step might take some time...
+            container.start();
+
+            // Do whatever you want with the rest client ...
+            final CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+            credentialsProvider.setCredentials(
+                AuthScope.ANY,
+                new UsernamePasswordCredentials(ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD)
+            );
+
+            client =
+                RestClient
+                    .builder(HttpHost.create(container.getHttpHostAddress()))
+                    .setHttpClientConfigCallback(httpClientBuilder -> {
+                        return httpClientBuilder.setDefaultCredentialsProvider(credentialsProvider);
+                    })
+                    .build();
+
+            Response response = client.performRequest(new Request("GET", "/_cluster/health"));
+            // }}
+            assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
+            assertThat(EntityUtils.toString(response.getEntity())).contains("cluster_name");
+            // httpClientContainerNoSSL8 {{
+        }
+        // }
+    }
+
+    @Test
+    void restClientSecuredClusterHealth() throws IOException {
         // httpClientSecuredContainer {
         // Create the elasticsearch container.
         try (
@@ -250,7 +330,7 @@ public class ElasticsearchContainerTest {
 
     @SuppressWarnings("deprecation") // The TransportClient will be removed in Elasticsearch 8.
     @Test
-    public void transportClientClusterHealth() {
+    void transportClientClusterHealth() {
         // transportClientContainer {
         // Create the elasticsearch container.
         try (ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)) {
@@ -276,7 +356,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void incompatibleSettingsTest() {
+    void incompatibleSettingsTest() {
         // The OSS image can not use security feature
         assertThat(
             catchThrowable(() -> {
@@ -289,21 +369,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearch8SecureByDefault() throws Exception {
-        try (
-            ElasticsearchContainer container = new ElasticsearchContainer(
-                "docker.elastic.co/elasticsearch/elasticsearch:8.1.2"
-            )
-        ) {
-            // Start the container. This step might take some time...
-            container.start();
-
-            assertClusterHealthResponse(container);
-        }
-    }
-
-    @Test
-    public void testDockerHubElasticsearch8ImageSecureByDefault() throws Exception {
+    void testDockerHubElasticsearch8ImageSecureByDefault() throws Exception {
         try (ElasticsearchContainer container = new ElasticsearchContainer("elasticsearch:8.1.2")) {
             container.start();
 
@@ -312,7 +378,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearch8SecureByDefaultCustomCaCertFails() throws Exception {
+    void testElasticsearch8SecureByDefaultCustomCaCertFails() throws Exception {
         final MountableFile mountableFile = MountableFile.forClasspathResource("http_ca.crt");
         String caPath = "/tmp/http_ca.crt";
         try (
@@ -334,7 +400,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearch8SecureByDefaultHttpWaitStrategy() throws Exception {
+    void testElasticsearch8SecureByDefaultHttpWaitStrategy() throws Exception {
         final HttpWaitStrategy httpsWaitStrategy = Wait
             .forHttps("/")
             .forPort(9200)
@@ -357,7 +423,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearch8SecureByDefaultFailsSilentlyOnLatestImages() throws Exception {
+    void testElasticsearch8SecureByDefaultFailsSilentlyOnLatestImages() throws Exception {
         // this test exists for custom images by users that use the `latest` tag
         // even though the version might be older than version 8
         // this tags an old 7.x version as :latest
@@ -376,7 +442,50 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearchDefaultMaxHeapSize() throws Exception {
+    void testElasticsearch7CanHaveSecurityEnabledAndUseSslContext() throws Exception {
+        String customizedCertPath = "/usr/share/elasticsearch/config/certs/http_ca_customized.crt";
+        try (
+            ElasticsearchContainer container = new ElasticsearchContainer(
+                "docker.elastic.co/elasticsearch/elasticsearch:7.17.15"
+            )
+                .withPassword(ElasticsearchContainer.ELASTICSEARCH_DEFAULT_PASSWORD)
+                .withEnv("xpack.security.enabled", "true")
+                .withEnv("xpack.security.http.ssl.enabled", "true")
+                .withEnv("xpack.security.http.ssl.key", "/usr/share/elasticsearch/config/certs/elasticsearch.key")
+                .withEnv(
+                    "xpack.security.http.ssl.certificate",
+                    "/usr/share/elasticsearch/config/certs/elasticsearch.crt"
+                )
+                .withEnv("xpack.security.http.ssl.certificate_authorities", customizedCertPath)
+                // these lines show how certificates can be created self-made way
+                // obviously this shouldn't be done in prod environment, where proper and officially signed keys should be present
+                .withCopyToContainer(
+                    Transferable.of(
+                        "#!/bin/bash\n" +
+                        "mkdir -p /usr/share/elasticsearch/config/certs;" +
+                        "openssl req -x509 -newkey rsa:4096 -keyout /usr/share/elasticsearch/config/certs/elasticsearch.key -out /usr/share/elasticsearch/config/certs/elasticsearch.crt -days 365 -nodes -subj \"/CN=localhost\";" +
+                        "openssl x509 -outform der -in /usr/share/elasticsearch/config/certs/elasticsearch.crt -out " +
+                        customizedCertPath +
+                        "; chown -R elasticsearch /usr/share/elasticsearch/config/certs/",
+                        555
+                    ),
+                    "/usr/share/elasticsearch/generate-certs.sh"
+                )
+                // because we need to generate the certificates before Elasticsearch starts, the entry command has to be tuned accordingly
+                .withCommand(
+                    "sh",
+                    "-c",
+                    "/usr/share/elasticsearch/generate-certs.sh && /usr/local/bin/docker-entrypoint.sh"
+                )
+                .withCertPath(customizedCertPath)
+        ) {
+            container.start();
+            assertClusterHealthResponse(container);
+        }
+    }
+
+    @Test
+    void testElasticsearchDefaultMaxHeapSize() throws Exception {
         long defaultHeapSize = 2147483648L;
 
         try (ElasticsearchContainer container = new ElasticsearchContainer(ELASTICSEARCH_IMAGE)) {
@@ -386,7 +495,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearchCustomMaxHeapSizeInEnvironmentVariable() throws Exception {
+    void testElasticsearchCustomMaxHeapSizeInEnvironmentVariable() throws Exception {
         long customHeapSize = 1574961152;
 
         try (
@@ -399,7 +508,7 @@ public class ElasticsearchContainerTest {
     }
 
     @Test
-    public void testElasticsearchCustomMaxHeapSizeInJvmOptionsFile() throws Exception {
+    void testElasticsearchCustomMaxHeapSizeInJvmOptionsFile() throws Exception {
         long customHeapSize = 1574961152;
 
         try (

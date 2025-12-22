@@ -1,6 +1,6 @@
 package org.testcontainers.containers;
 
-import org.testcontainers.containers.wait.strategy.LogMessageWaitStrategy;
+import org.testcontainers.containers.wait.strategy.Wait;
 import org.testcontainers.utility.DockerImageName;
 
 /**
@@ -9,7 +9,10 @@ import org.testcontainers.utility.DockerImageName;
  * Supported images: {@code gcr.io/google.com/cloudsdktool/google-cloud-cli}, {@code gcr.io/google.com/cloudsdktool/cloud-sdk}
  * <p>
  * Default port is 8085.
+ *
+ * @deprecated use {@link org.testcontainers.gcloud.PubSubEmulatorContainer} instead.
  */
+@Deprecated
 public class PubSubEmulatorContainer extends GenericContainer<PubSubEmulatorContainer> {
 
     private static final DockerImageName DEFAULT_IMAGE_NAME = DockerImageName.parse(
@@ -33,7 +36,7 @@ public class PubSubEmulatorContainer extends GenericContainer<PubSubEmulatorCont
         dockerImageName.assertCompatibleWith(DEFAULT_IMAGE_NAME, CLOUD_SDK_IMAGE_NAME);
 
         withExposedPorts(8085);
-        setWaitStrategy(new LogMessageWaitStrategy().withRegEx("(?s).*started.*$"));
+        setWaitStrategy(Wait.forLogMessage(".*started.*$", 1));
         withCommand("/bin/sh", "-c", CMD);
     }
 

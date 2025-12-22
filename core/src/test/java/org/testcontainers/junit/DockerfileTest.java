@@ -1,7 +1,7 @@
 package org.testcontainers.junit;
 
 import com.github.dockerjava.api.command.BuildImageCmd;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.GenericContainer;
@@ -16,12 +16,12 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-public class DockerfileTest {
+class DockerfileTest {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DockerfileTest.class);
 
     @Test
-    public void simpleDockerfileWorks() {
+    void simpleDockerfileWorks() {
         ImageFromDockerfile image = new ImageFromDockerfile()
             .withFileFromString("folder/someFile.txt", "hello")
             .withFileFromClasspath("test.txt", "mappable-resource/test-resource.txt")
@@ -31,14 +31,14 @@ public class DockerfileTest {
     }
 
     @Test
-    public void customizableImage() {
+    void customizableImage() {
         ImageFromDockerfile image = new ImageFromDockerfile() {
             @Override
             protected void configure(BuildImageCmd buildImageCmd) {
                 super.configure(buildImageCmd);
 
                 List<String> dockerfile = Arrays.asList(
-                    "FROM alpine:3.16",
+                    "FROM alpine:3.17",
                     "RUN echo 'hello from Docker build process'",
                     "CMD yes"
                 );
@@ -52,13 +52,13 @@ public class DockerfileTest {
     }
 
     @Test
-    public void dockerfileBuilderWorks() {
+    void dockerfileBuilderWorks() {
         ImageFromDockerfile image = new ImageFromDockerfile()
             .withFileFromClasspath("test.txt", "mappable-resource/test-resource.txt")
             .withFileFromString("folder/someFile.txt", "hello")
             .withDockerfileFromBuilder(builder -> {
                 builder
-                    .from("alpine:3.16")
+                    .from("alpine:3.17")
                     .workDir("/app")
                     .add("test.txt", "test file.txt")
                     .run("ls", "-la", "/app/test file.txt")
@@ -71,7 +71,7 @@ public class DockerfileTest {
     }
 
     @Test
-    public void filePermissions() throws TimeoutException {
+    void filePermissions() throws TimeoutException {
         WaitingConsumer consumer = new WaitingConsumer();
 
         ImageFromDockerfile image = new ImageFromDockerfile()
@@ -101,7 +101,7 @@ public class DockerfileTest {
             )
             .withDockerfileFromBuilder(builder -> {
                 builder
-                    .from("alpine:3.16") //
+                    .from("alpine:3.17") //
                     .copy("someFile.txt", "/someFile.txt")
                     .cmd("stat -c \"%a\" /someFile.txt");
             });

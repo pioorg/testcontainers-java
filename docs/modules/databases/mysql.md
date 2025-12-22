@@ -1,13 +1,29 @@
 # MySQL Module
 
+Testcontainers module for [MySQL](https://hub.docker.com/_/mysql)
+
+## Usage example
+
+You can start a MySQL container instance from any Java application by using:
+
+<!--codeinclude-->
+[Container definition](../../../modules/mysql/src/test/java/org/testcontainers/mysql/MySQLContainerTest.java) inside_block:container
+<!--/codeinclude-->
+
 See [Database containers](./index.md) for documentation and usage that is common to all relational database container types.
+
+### Testcontainers JDBC URL
+
+`jdbc:tc:mysql:8.0.36:///databasename`
+
+See [JDBC](./jdbc.md) for documentation.
 
 ## Overriding MySQL my.cnf settings
 
 For MySQL databases, it is possible to override configuration settings using resources on the classpath. Assuming `somepath/mysql_conf_override`
 is a directory on the classpath containing .cnf files, the following URL can be used:
 
-  `jdbc:tc:mysql:5.7.34://hostname/databasename?TC_MY_CNF=somepath/mysql_conf_override`
+  `jdbc:tc:mysql:8.0.36://hostname/databasename?TC_MY_CNF=somepath/mysql_conf_override`
 
 Any .cnf files in this classpath directory will be mapped into the database container's /etc/mysql/conf.d directory,
 and will be able to override server settings when the container starts.
@@ -24,13 +40,13 @@ Add the following dependency to your `pom.xml`/`build.gradle` file:
 
 === "Gradle"
     ```groovy
-    testImplementation "org.testcontainers:mysql:{{latest_version}}"
+    testImplementation "org.testcontainers:testcontainers-mysql:{{latest_version}}"
     ```
 === "Maven"
     ```xml
     <dependency>
         <groupId>org.testcontainers</groupId>
-        <artifactId>mysql</artifactId>
+        <artifactId>testcontainers-mysql</artifactId>
         <version>{{latest_version}}</version>
         <scope>test</scope>
     </dependency>
