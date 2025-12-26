@@ -4,5 +4,19 @@ dependencies {
     api project(':testcontainers')
 
     testImplementation "org.elasticsearch.client:elasticsearch-rest-client:9.2.2"
+    testImplementation "co.elastic.clients:elasticsearch-java:9.2.2"
     testImplementation "org.elasticsearch.client:transport:7.17.29"
+
+    test {
+        javaLauncher = javaToolchains.launcherFor {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+    }
+
+    compileTestJava {
+        javaCompiler = javaToolchains.compilerFor {
+            languageVersion = JavaLanguageVersion.of(17)
+        }
+        options.release.set(17)
+    }
 }

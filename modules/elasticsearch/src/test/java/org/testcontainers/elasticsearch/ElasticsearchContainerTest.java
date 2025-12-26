@@ -1,5 +1,8 @@
 package org.testcontainers.elasticsearch;
 
+import co.elastic.clients.elasticsearch.ElasticsearchClient;
+import co.elastic.clients.elasticsearch._types.HealthStatus;
+import co.elastic.clients.elasticsearch.cluster.HealthResponse;
 import com.github.dockerjava.api.DockerClient;
 import org.apache.http.HttpHost;
 import org.apache.http.auth.AuthScope;
@@ -57,6 +60,9 @@ class ElasticsearchContainerTest {
 
     private RestClient client = null;
 
+    // this is a new client, available since version 9.0.0, requires Java 17+
+    private ElasticsearchClient elasticsearchClient;
+
     private RestClient anonymousClient = null;
 
     @AfterEach
@@ -69,6 +75,15 @@ class ElasticsearchContainerTest {
             anonymousClient.close();
             anonymousClient = null;
         }
+    }
+
+    @AfterEach
+    public void stopElasticsearchClient() throws IOException {
+        if (elasticsearchClient != null) {
+            elasticsearchClient.close();
+            elasticsearchClient = null;
+        }
+
     }
 
     @SuppressWarnings("deprecation") // Using deprecated constructor for verification of backwards compatibility
@@ -249,6 +264,37 @@ class ElasticsearchContainerTest {
             assertThat(response.getStatusLine().getStatusCode()).isEqualTo(200);
             assertThat(EntityUtils.toString(response.getEntity())).contains("cluster_name");
             // httpClientContainer8 {{
+        }
+        // }
+    }
+
+    @Test
+    void elasticsearchClientClusterHealthElasticsearch9() throws IOException {
+        // ESClientContainer9 {
+        // Create the Elasticsearch container.
+        try (
+            ElasticsearchContainer container = new ElasticsearchContainer(
+                "docker.elastic.co/elasticsearch/elasticsearch:9.2.2"
+            )
+        ) {
+            // Start the container. This step might take some time...
+            container.start();
+
+            // create the Elasticsearch Java client (this requires Java 17+)
+
+            elasticsearchClient = ElasticsearchClient.of(config ->
+                config.usernameAndPassword(ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD)
+                    .host("https://" + container.getHttpHostAddress())
+                    .sslContext(container.createSslContextFromCa()));
+
+
+            // Do whatever you want with the Elasticsearch client ...
+            HealthResponse health = elasticsearchClient.cluster().health();
+            assertThat(health.clusterName()).isEqualTo("docker-cluster");
+            assertThat(health.status()).isEqualTo(HealthStatus.Green);
+            // }}
+
+            // ESClientContainer9 {{
         }
         // }
     }
@@ -578,6 +624,16 @@ class ElasticsearchContainerTest {
         }
 
         return client;
+    }
+
+    private ElasticsearchClient getElasticsearchClient(ElasticsearchContainer container) {
+        if (elasticsearchClient == null) {
+            elasticsearchClient = ElasticsearchClient.of(config ->
+                config.usernameAndPassword(ELASTICSEARCH_USERNAME, ELASTICSEARCH_PASSWORD)
+                    .host("https://" + container.getHttpHostAddress())
+                    .sslContext(container.createSslContextFromCa()));
+        }
+        return elasticsearchClient;
     }
 
     private RestClient getAnonymousClient(ElasticsearchContainer container) {
